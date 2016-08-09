@@ -1,0 +1,48 @@
+plugins {
+    id 'idea'
+    id 'eclipse'
+}
+
+wrapper.gradleVersion = '2.14.1'
+
+subprojects {
+    repositories {
+        jcenter()
+    }
+    apply plugin: 'groovy'
+    dependencies {
+        compile gradleApi()
+        compile 'org.codehaus.groovy:groovy-all:2.4.4'
+    }
+}
+
+project(':distdocs') {
+    description = ''
+}
+
+project(':projectinfo') {
+    description = 'Grabs '
+    dependencies {
+        compile project(':releaseme')
+    }
+}
+
+project(':releaseme') {
+    description = 'An extremely opinionated plugin to help with releases'
+    dependencies {
+        compile project(':util')
+    }
+}
+
+project(':secrets') {
+    description = 'Small plugin to read in secrets from secrets.properties into rootProject.ext'
+}
+
+project(':util') {
+    description = 'General utility functions'
+    dependencies {
+        compile 'org.ajoberstar:grgit:1.7.0'
+        compile 'org.kohsuke:github-api:1.77'
+        compile 'commons-validator:commons-validator:1.5.1'
+    }
+}
