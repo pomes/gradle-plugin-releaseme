@@ -15,8 +15,8 @@
  */
 package com.github.pomes.gradle.releaseme
 
-import com.github.pomes.gradle.util.Git
 import com.github.pomes.gradle.util.GitHubUtil
+import com.github.pomes.gradle.util.GitUtil
 import com.github.pomes.gradle.util.Snapshot
 import groovy.util.logging.Slf4j
 import org.ajoberstar.grgit.Grgit
@@ -53,9 +53,9 @@ class IShallBeReleasedPlugin implements Plugin<Project> {
     void apply(Project project) {
         extension = project.extensions.create(EXTENSION_NAME, IShallBeReleasedExtension)
 
-        localGit = Git.connectToLocalGit(project.rootDir)
+        localGit = GitUtil.connectToLocalGit(project.rootDir.toString())
         if (!localGit) {
-            throw new GradleException('Failed to connect to the local Git repository.')
+            throw new GradleException('Failed to connect to the local GitUtil repository.')
         }
         setVersion(project, localGit)
         project.ext.ghRepo = GitHubUtil.connectToGithub(localGit, extension.remote)
@@ -158,7 +158,7 @@ class IShallBeReleasedPlugin implements Plugin<Project> {
             description = 'Determines the current version.'
             onlyIf {
                 if (project.ext.has('lastVersion')) {
-                    project.ext.lastVersion != Git.determineCurrentVersion(localGit, DEFAULT_RELEASE_TAG_PREFIX)
+                    project.ext.lastVersion != GitUtil.determineCurrentVersion(localGit, DEFAULT_RELEASE_TAG_PREFIX)
                 } else {
                     true
                 }
@@ -171,7 +171,7 @@ class IShallBeReleasedPlugin implements Plugin<Project> {
     }
 
     static void setVersion(Project project, Grgit git) {
-        project.version = determineCurrentVersion(git)
+        project.version = GitUtil.determineCurrentVersion(git, DEFAULT_RELEASE_TAG_PREFIX)
         log.info "Project ($project.name) version set to $project.version"
         project.ext.lastVersion = project.version
         setVersionForProject(project)

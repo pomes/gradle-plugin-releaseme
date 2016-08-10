@@ -23,12 +23,12 @@ import org.eclipse.jgit.errors.RepositoryNotFoundException
 import org.gradle.api.GradleException
 
 @Slf4j
-class Git {
+class GitUtil {
     static Grgit connectToLocalGit(String dir) {
         try {
             return Grgit.open(currentDir: dir)
         } catch (RepositoryNotFoundException e) {
-            throw new GradleException("Git repository not found at $dir")
+            throw new GradleException("GitUtil repository not found at $dir")
         }
     }
 

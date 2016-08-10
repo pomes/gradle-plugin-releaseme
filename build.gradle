@@ -4,24 +4,40 @@ plugins {
 }
 
 wrapper.gradleVersion = '2.14.1'
+group = 'com.github.pomes.gradle-plugins'
+version = '0.0.1-SNAPSHOT'
 
 subprojects {
     repositories {
         jcenter()
     }
     apply plugin: 'groovy'
+    apply plugin: 'java-gradle-plugin'
+    apply plugin: 'maven-publish'
+
+    version = rootProject.version
+    group = rootProject.group
+
     dependencies {
-        compile gradleApi()
         compile 'org.codehaus.groovy:groovy-all:2.4.4'
+    }
+
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                from components.java
+            }
+        }
     }
 }
 
-project(':distdocs') {
-    description = ''
+project(':distextra') {
+    description = 'Prepares various extra items for a distribution'
+
 }
 
 project(':projectinfo') {
-    description = 'Grabs '
+    description = 'Grabs project information from GitHub'
     dependencies {
         compile project(':releaseme')
     }
@@ -34,8 +50,8 @@ project(':releaseme') {
     }
 }
 
-project(':secrets') {
-    description = 'Small plugin to read in secrets from secrets.properties into rootProject.ext'
+project(':props') {
+    description = 'Small plugin to read in props from props.properties into rootProject.ext'
 }
 
 project(':util') {

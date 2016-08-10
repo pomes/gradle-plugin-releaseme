@@ -14,7 +14,7 @@
  *    limitations under the License.
  */
 
-package com.github.pomes.gradle.distdocs
+package com.github.pomes.gradle.distextra
 
 import org.gradle.api.Plugin
 import org.gradle.api.Project
@@ -26,8 +26,8 @@ import static org.gradle.api.plugins.JavaPlugin.CLASSES_TASK_NAME
 import static org.gradle.api.plugins.JavaPlugin.TEST_CLASSES_TASK_NAME
 import static org.gradle.api.plugins.GroovyPlugin.GROOVYDOC_TASK_NAME
 
-class DistDocsPlugin implements Plugin<Project> {
-    static final String EXTENSION_NAME = 'distdocs'
+class DistExtraPlugin implements Plugin<Project> {
+    static final String EXTENSION_NAME = 'distextra'
     static final String TASK_GROUP_DOCUMENTATION = 'documentation'
     static final String TASK_GROUP_SOURCES = 'sources'
 
