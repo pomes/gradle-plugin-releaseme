@@ -25,16 +25,9 @@ import static com.github.pomes.gradle.releaseme.IShallBeReleasedPlugin.DEFAULT_R
 @Slf4j
 @ToString(includeNames = true)
 class IShallBeReleasedExtension {
-
-    String remote = 'origin'
-
-    String releaseTagPrefix = DEFAULT_RELEASE_TAG_PREFIX
-
     //Boolean releaseProject = false
 
     //Boolean githubRelease = false
 
     //Boolean bintrayRelease = false
-
-    GitHub gitHub = null
 }

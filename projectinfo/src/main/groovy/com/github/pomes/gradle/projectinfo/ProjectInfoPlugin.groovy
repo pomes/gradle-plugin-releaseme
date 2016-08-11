@@ -17,7 +17,8 @@
 package com.github.pomes.gradle.projectinfo
 
 import com.github.pomes.gradle.projectinfo.project.*
-import com.github.pomes.gradle.releaseme.IShallBeReleasedPlugin
+import com.github.pomes.gradle.tagger.TaggerPlugin
+import com.github.pomes.gradle.util.GitUtil
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 
@@ -25,10 +26,13 @@ import java.time.Year
 import java.time.ZoneId
 
 class ProjectInfoPlugin implements Plugin<Project> {
-    static final String EXTENSION_NAME = 'projectinfo'
 
     static final String TASK_GROUP = 'project info'
 
+    //Tasks
+    static final String DETERMINE_VERSION_TASK_NAME = 'determineCurrentVersion'
+    static final String DISPLAY_VERSION_TASK_NAME = 'displayCurrentVersion'
+    static final String CONFIGURE_VERSION_FILE_TASK_NAME = 'configureVersionFile'
     static final String GENERATE_PROJECT_INFO_TASK_NAME = 'generateProjectInfo'
     static final String DISPLAY_PROJECT_INFO_TASK_NAME = 'displayProjectInfo'
     static final String CONFIGURE_POM_TASK_NAME = 'configurePom'
@@ -36,22 +40,86 @@ class ProjectInfoPlugin implements Plugin<Project> {
     private ProjectInfo projectInfo
     private Node pom
 
+    File versionFile
+
     @Override
     void apply(Project project) {
-        project.extensions.create(EXTENSION_NAME, ProjectInfoExtension)
+        versionFile = project.file("${project.rootDir}/VERSION")
+        setVersion(project)
 
+        addDetermineVersionTask(project)
+        addDisplayVersionTask(project)
+        addConfigureVersionFileTask(project)
         addGenerateProjectInfoTask(project)
         addDisplayProjectInfoTask(project)
         addConfigurePomTask(project)
+    }
+
+    void setVersion(Project project) {
+        setVersionForProject(project,
+                GitUtil.determineCurrentVersion(project.ext.gitInfo.localGit,
+                        TaggerPlugin.DEFAULT_RELEASE_TAG_PREFIX))
+        log.info "Project ($project.name) version set to $project.version"
+    }
+
+    void setVersionForProject(Project project, String version) {
+        project.ext.lastVersion = project.version
+        project.version = version
+        versionFile.text = project.version
+        project.subprojects.each { sub ->
+            sub.version = project.version
+        }
+    }
+
+    private void addDetermineVersionTask(Project project) {
+        project.tasks.create(DETERMINE_VERSION_TASK_NAME) {
+            group = 'release'
+            description = 'Determines the current version.'
+            onlyIf {
+                if (project.ext.has('lastVersion')) {
+                    project.ext.lastVersion != GitUtil.determineCurrentVersion(localGit, DEFAULT_RELEASE_TAG_PREFIX)
+                } else {
+                    true
+                }
+            }
+            doLast {
+                setVersion(project)
+            }
+            finalizedBy CONFIGURE_VERSION_FILE_TASK_NAME
+        }
+    }
+
+    private void addConfigureVersionFileTask(Project project) {
+        File vFile = project.file("${project.rootDir}/VERSION")
+        project.tasks.create(CONFIGURE_VERSION_FILE_TASK_NAME) {
+            group = 'release'
+            description = 'Adds a VERSION file to the project root'
+            dependsOn DETERMINE_VERSION_TASK_NAME
+            outputs.file vFile
+            doLast {
+                vFile.text = project.version
+                log.info "Configured version file: $vFile"
+            }
+        }
+    }
+
+    private void addDisplayVersionTask(Project project) {
+        project.tasks.create(DISPLAY_VERSION_TASK_NAME) {
+            group = 'release'
+            description = 'Displays the current version.'
+            dependsOn DETERMINE_VERSION_TASK_NAME
+            doLast {
+                println project.version
+            }
+        }
     }
 
     private void addGenerateProjectInfoTask(Project project) {
         project.tasks.create(GENERATE_PROJECT_INFO_TASK_NAME) {
             group = TASK_GROUP
             description = 'Gathers together various project details.'
-            if (project.rootProject.plugins.hasPlugin(IShallBeReleasedPlugin)) {
-                dependsOn project.rootProject.tasks.getByName(IShallBeReleasedPlugin.DETERMINE_VERSION_TASK_NAME)
-            }
+            dependsOn DETERMINE_VERSION_TASK_NAME
+
             doLast {
                 if (!projectInfo) {
                     projectInfo = generateProjectInfo(project)
@@ -111,7 +179,7 @@ class ProjectInfoPlugin implements Plugin<Project> {
     Node generatePomNodes(ProjectInfo info) {
         new NodeBuilder().pom {
             name info.name
-            description info.description?:'No description'
+            description info.description ?: 'No description'
             if (info.url) url info.url
             if (info.inceptionYear) inceptionYear info.inceptionYear
             if (info.scm) {
@@ -144,12 +212,5 @@ class ProjectInfoPlugin implements Plugin<Project> {
                 }
             }
         }
-    }
-
-    static String determineMavenVersion(String version) {
-        List<String> components = version.tokenize('-')
-        String versionNumber = components.head()
-        String postfix = components.size() > 1 ? "-${components.last()}" : ''
-        "$versionNumber.0.0$postfix".toString()
     }
 }
