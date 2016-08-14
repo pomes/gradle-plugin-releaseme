@@ -1,6 +1,5 @@
 rootProject.name = 'pomes-gradle-plugins'
-include 'distextra', 'projectinfo', 'releaseme', 'props'
+include 'distextra', 'projectinfo', 'releaseme'
 include 'util'
 include 'tagger'
 include 'gitbase'
-

@@ -66,10 +66,6 @@ project(':releaseme') {
     }
 }
 
-project(':props') {
-    description = 'Small plugin to read in props from props.properties into rootProject.ext'
-}
-
 project(':util') {
     description = 'General utility functions'
     dependencies {
