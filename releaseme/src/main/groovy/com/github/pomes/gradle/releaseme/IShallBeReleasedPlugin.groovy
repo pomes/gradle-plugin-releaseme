@@ -17,10 +17,12 @@ package com.github.pomes.gradle.releaseme
 
 import com.github.pomes.gradle.projectinfo.ProjectInfoPlugin
 import com.github.pomes.gradle.tagger.TaggerPlugin
+import com.jfrog.bintray.gradle.BintrayPlugin
 import groovy.util.logging.Slf4j
-import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.gradle.api.publish.maven.plugins.MavenPublishPlugin
+import org.jfrog.gradle.plugin.artifactory.ArtifactoryPlugin
 
 @Slf4j
 class IShallBeReleasedPlugin implements Plugin<Project> {
@@ -35,16 +37,22 @@ class IShallBeReleasedPlugin implements Plugin<Project> {
     void apply(Project project) {
         extension = project.extensions.create(EXTENSION_NAME, IShallBeReleasedExtension)
 
-        applyPlugins(project, [TaggerPlugin,
-                               ProjectInfoPlugin] as Set)
-        addPerformGitHubReleaseTask(project, extension)
+        [TaggerPlugin, ProjectInfoPlugin].each { plugin ->
+            applyPlugin(project, plugin)
+        }
+
+        project.subprojects.each { Project subProject ->
+            [MavenPublishPlugin, BintrayPlugin, ArtifactoryPlugin].each { plugin ->
+                applyPlugin(subProject, plugin)
+            }
+        }
+
+        //addPerformGitHubReleaseTask(project, extension)
     }
 
-    static void applyPlugins(Project project, Set<Class<Plugin>> plugins) throws GradleException {
-        plugins.each { plugin ->
-            if (!project.plugins.hasPlugin(plugin)) {
-                project.plugins.apply(plugin)
-            }
+    static void applyPlugin(Project project, Class<Plugin> plugin) {
+        if (!project.plugins.hasPlugin(plugin)) {
+            project.plugins.apply(plugin)
         }
     }
 

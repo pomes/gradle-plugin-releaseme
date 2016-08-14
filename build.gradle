@@ -61,6 +61,8 @@ project(':releaseme') {
     dependencies {
         compile project(':tagger')
         compile project(':projectinfo')
+        compile 'org.jfrog.buildinfo:build-info-extractor-gradle:4.0.0'
+        compile 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.1'
     }
 }
 
