@@ -1,37 +1,51 @@
 package com.github.pomes.gradle.tagger
 
+import com.github.pomes.gradle.gitbase.GitBaseExtension
+import com.github.pomes.gradle.gitbase.GitBasePlugin
+import com.github.pomes.gradle.gitbase.GitInfo
 import groovy.util.logging.Slf4j
+import org.ajoberstar.grgit.Grgit
 import org.ajoberstar.grgit.Status
 import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
-
-import java.nio.file.Files
-import java.nio.file.Paths
+import org.gradle.api.Task
+import org.kohsuke.github.GHRepository
 
 @Slf4j
 class TaggerPlugin implements Plugin<Project> {
+    static final String PLUGIN_NAME = 'tagger'
+    static final String EXTENSION_NAME = 'tagger'
     static final String CHECK_RELEASE_STATUS_TASK_NAME = 'checkReleaseStatus'
     static final String PERFORM_RELEASE_TASK_NAME = 'performRelease'
 
+    Grgit localGit
+    GHRepository ghRepo
+
     @Override
     void apply(Project project) {
-        addCheckReleaseStatusTask(project, extension)
+        GitInfo info = GitBasePlugin.applyPlugin(project)
+        localGit = info.localGit
+        ghRepo = info.githubRepo
+        GitBaseExtension extension = project.extensions.getByName(GitBasePlugin.EXTENSION_NAME)
+
+        addCheckReleaseStatusTask(project)
         addPerformReleaseTask(project, extension)
     }
 
-    private void addCheckReleaseStatusTask(Project project, TaggerExtension extension) {
-        project.tasks.create(CHECK_RELEASE_STATUS_TASK_NAME) {
+    private void addCheckReleaseStatusTask(Project project) {
+        Task checkRelease = project.tasks.create(CHECK_RELEASE_STATUS_TASK_NAME) {
             group = 'release'
             description = 'Checks if there are any items preventing a release.'
+
             doLast {
-                Status status = project.ext.gitInfo.localGit.status()
+                Status status = localGit.status()
                 Boolean flag = false
                 List<String> errors = []
 
                 if (!status.clean) {
-                    errors << "The local git repository contains changes: Conflicts: ${status.conflicts.size()}; Staged: ${status.staged.allChanges.size()}; Unstaged: ${status.unstaged.allChanges.size()}"
-                    flag = true
+                    log.warn "The local git repository contains changes: Conflicts: ${status.conflicts.size()}; Staged: ${status.staged.allChanges.size()}; Unstaged: ${status.unstaged.allChanges.size()}"
+                    //flag = true
                 }
 
                 if (localGit.branch.current.name != ghRepo.defaultBranch) {
@@ -39,7 +53,7 @@ class TaggerPlugin implements Plugin<Project> {
                     flag = true
                 }
 
-                if (Files.notExists(Paths.get(project.rootDir.toString(), 'LICENSE'))) {
+                if (!project.file('LICENSE').exists()) {
                     errors << 'You don\'t have a LICENSE file'
                     flag = true
                 }
@@ -54,20 +68,28 @@ class TaggerPlugin implements Plugin<Project> {
                 }
             }
         }
+
+        log.warn project.name
+        project.afterEvaluate {
+            project.allprojects.each { p ->
+                if (p.plugins.hasPlugin('java')) {
+                    checkRelease.dependsOn p.tasks.getByName('build')
+                }
+            }
+        }
     }
 
-    private void addPerformReleaseTask(Project project, TaggerExtension extension) {
+    private void addPerformReleaseTask(Project project, GitBaseExtension extension) {
 
         project.tasks.create('_prepareReleaseVersion') {
             group = 'release'
             description = 'Prepares any changes required prior to committing/tagging a release'
             dependsOn CHECK_RELEASE_STATUS_TASK_NAME
-            finalizedBy CONFIGURE_VERSION_FILE_TASK_NAME
             doLast {
                 //Change the version to drop the SNAPSHOT
-                project.version = determineNextReleaseVersion(project.version)
-                setVersionForProject(project)
-                println "The project version is set to '$project.version' for the release"
+                //String releaseVersion = determineNextReleaseVersion(project.version, extension.releaseTagPrefix)
+                //Versioning.setVersionForProject(project, releaseVersion)
+                println "The project version will be '$project.version' for the release"
             }
         }
 
@@ -85,7 +107,7 @@ class TaggerPlugin implements Plugin<Project> {
             description = 'Tags a release in git.'
             dependsOn '_commitRelease'
             doLast {
-                String tag = "${DEFAULT_RELEASE_TAG_PREFIX}${project.version}"
+                String tag = "${extension.releaseTagPrefix}${project.version}"
                 println "Releasing $tag"
                 localGit.tag.add(name: tag)
             }

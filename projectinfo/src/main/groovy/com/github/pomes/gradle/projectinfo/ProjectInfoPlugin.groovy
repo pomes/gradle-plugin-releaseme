@@ -16,115 +16,67 @@
 
 package com.github.pomes.gradle.projectinfo
 
+import com.github.pomes.gradle.gitbase.GitBaseExtension
+import com.github.pomes.gradle.gitbase.GitBasePlugin
+import com.github.pomes.gradle.gitbase.GitInfo
 import com.github.pomes.gradle.projectinfo.project.*
-import com.github.pomes.gradle.tagger.TaggerPlugin
 import com.github.pomes.gradle.util.GitUtil
+import com.github.pomes.gradle.util.Versioning
+import groovy.util.logging.Slf4j
+import org.ajoberstar.grgit.Grgit
 import org.gradle.api.Plugin
 import org.gradle.api.Project
+import org.kohsuke.github.GHRepository
 
 import java.time.Year
 import java.time.ZoneId
 
+@Slf4j
 class ProjectInfoPlugin implements Plugin<Project> {
+
+    static final String PLUGIN_NAME = 'tagger'
 
     static final String TASK_GROUP = 'project info'
 
     //Tasks
     static final String DETERMINE_VERSION_TASK_NAME = 'determineCurrentVersion'
     static final String DISPLAY_VERSION_TASK_NAME = 'displayCurrentVersion'
-    static final String CONFIGURE_VERSION_FILE_TASK_NAME = 'configureVersionFile'
+    //static final String CONFIGURE_VERSION_FILE_TASK_NAME = 'configureVersionFile'
     static final String GENERATE_PROJECT_INFO_TASK_NAME = 'generateProjectInfo'
     static final String DISPLAY_PROJECT_INFO_TASK_NAME = 'displayProjectInfo'
     static final String CONFIGURE_POM_TASK_NAME = 'configurePom'
 
-    private ProjectInfo projectInfo
-    private Node pom
-
-    File versionFile
+    Grgit localGit
+    GHRepository ghRepo
+    GitBaseExtension extension
 
     @Override
     void apply(Project project) {
-        versionFile = project.file("${project.rootDir}/VERSION")
-        setVersion(project)
+        GitInfo info = GitBasePlugin.applyPlugin(project)
+        localGit = info.localGit
+        ghRepo = info.githubRepo
+        extension = project.extensions.getByName(GitBasePlugin.EXTENSION_NAME)
 
-        addDetermineVersionTask(project)
-        addDisplayVersionTask(project)
-        addConfigureVersionFileTask(project)
-        addGenerateProjectInfoTask(project)
-        addDisplayProjectInfoTask(project)
-        addConfigurePomTask(project)
-    }
-
-    void setVersion(Project project) {
-        setVersionForProject(project,
-                GitUtil.determineCurrentVersion(project.ext.gitInfo.localGit,
-                        TaggerPlugin.DEFAULT_RELEASE_TAG_PREFIX))
+        String currentVersion = GitUtil.determineCurrentVersion(localGit,
+                extension.releaseTagPrefix)
+        Versioning.setVersionForProject(project, currentVersion)
         log.info "Project ($project.name) version set to $project.version"
-    }
 
-    void setVersionForProject(Project project, String version) {
-        project.ext.lastVersion = project.version
-        project.version = version
-        versionFile.text = project.version
-        project.subprojects.each { sub ->
-            sub.version = project.version
+        project.allprojects.each { p ->
+            p.ext.projectInfo = generateProjectInfo(p, ghRepo)
+            addDisplayVersionTask(p)
+            addDisplayProjectInfoTask(p)
+            addConfigurePomTask(p)
         }
     }
 
-    private void addDetermineVersionTask(Project project) {
-        project.tasks.create(DETERMINE_VERSION_TASK_NAME) {
-            group = 'release'
-            description = 'Determines the current version.'
-            onlyIf {
-                if (project.ext.has('lastVersion')) {
-                    project.ext.lastVersion != GitUtil.determineCurrentVersion(localGit, DEFAULT_RELEASE_TAG_PREFIX)
-                } else {
-                    true
-                }
-            }
-            doLast {
-                setVersion(project)
-            }
-            finalizedBy CONFIGURE_VERSION_FILE_TASK_NAME
-        }
-    }
-
-    private void addConfigureVersionFileTask(Project project) {
-        File vFile = project.file("${project.rootDir}/VERSION")
-        project.tasks.create(CONFIGURE_VERSION_FILE_TASK_NAME) {
-            group = 'release'
-            description = 'Adds a VERSION file to the project root'
-            dependsOn DETERMINE_VERSION_TASK_NAME
-            outputs.file vFile
-            doLast {
-                vFile.text = project.version
-                log.info "Configured version file: $vFile"
-            }
-        }
-    }
 
     private void addDisplayVersionTask(Project project) {
         project.tasks.create(DISPLAY_VERSION_TASK_NAME) {
             group = 'release'
             description = 'Displays the current version.'
-            dependsOn DETERMINE_VERSION_TASK_NAME
             doLast {
                 println project.version
-            }
-        }
-    }
-
-    private void addGenerateProjectInfoTask(Project project) {
-        project.tasks.create(GENERATE_PROJECT_INFO_TASK_NAME) {
-            group = TASK_GROUP
-            description = 'Gathers together various project details.'
-            dependsOn DETERMINE_VERSION_TASK_NAME
-
-            doLast {
-                if (!projectInfo) {
-                    projectInfo = generateProjectInfo(project)
-                    project.ext.projectInfo = projectInfo
-                }
             }
         }
     }
@@ -133,45 +85,36 @@ class ProjectInfoPlugin implements Plugin<Project> {
         project.tasks.create(DISPLAY_PROJECT_INFO_TASK_NAME) {
             group = TASK_GROUP
             description = 'Displays project details.'
-            dependsOn GENERATE_PROJECT_INFO_TASK_NAME
             doLast {
                 println project.ext.projectInfo.toYaml()
             }
         }
     }
 
-    static ProjectInfo generateProjectInfo(Project project) {
-        if (project.rootProject.ext.has('ghRepo')) {
-            def ghRepo = project.rootProject.ext.ghRepo
-            return new ProjectInfo(
-                    name: project.name,
-                    version: project.version,
-                    description: project.description ?: ghRepo.description,
-                    url: ghRepo.homepage.toURL(),
-                    inceptionYear: new Year(ghRepo.createdAt.toInstant().atZone(ZoneId.systemDefault()).toLocalDate().year),
-                    scm: [system             : 'git',
-                          url                : ghRepo.gitHttpTransportUrl().toURL(),
-                          connection         : "scm:git:${ghRepo.gitHttpTransportUrl()}",
-                          developerConnection: "scm:git:${ghRepo.gitHttpTransportUrl()}"] as Scm,
-                    licenses: [[name: ghRepo.license.name, url: ghRepo.license.url] as License],
-                    issueManagement: [system: 'GitHub', url: "${ghRepo.htmlUrl}/issues".toURL()] as IssueManagement,
-                    ciManagement: [system: 'TravisCI', url: "https://travis-ci.org/${ghRepo.fullName}".toURL()] as CiManagement
-            )
-        } else {
-            return new ProjectInfo(
-                    name: project.name,
-                    version: project.version,
-                    description: project.description)
-        }
+    static ProjectInfo generateProjectInfo(Project project, GHRepository ghRepo) {
+        return new ProjectInfo(
+                name: project.name,
+                version: project.version,
+                description: project.description ?: ghRepo.description,
+                url: ghRepo.homepage.toURL(),
+                inceptionYear: new Year(ghRepo.createdAt.toInstant().atZone(ZoneId.systemDefault()).toLocalDate().year),
+                scm: [system             : 'git',
+                      url                : ghRepo.gitHttpTransportUrl().toURL(),
+                      connection         : "scm:git:${ghRepo.gitHttpTransportUrl()}",
+                      developerConnection: "scm:git:${ghRepo.gitHttpTransportUrl()}"] as Scm,
+                licenses: [[name: ghRepo.license.name, url: ghRepo.license.url] as License],
+                issueManagement: [system: 'GitHub', url: "${ghRepo.htmlUrl}/issues".toURL()] as IssueManagement,
+                ciManagement: [system: 'TravisCI', url: "https://travis-ci.org/${ghRepo.fullName}".toURL()] as CiManagement
+        )
+
     }
 
     private void addConfigurePomTask(Project project) {
         project.tasks.create(CONFIGURE_POM_TASK_NAME) {
             group = TASK_GROUP
             description = 'Configures project\'s POM'
-            dependsOn GENERATE_PROJECT_INFO_TASK_NAME
             doLast {
-                project.ext.pom = generatePomNodes(projectInfo)
+                project.ext.pom = generatePomNodes(project.ext.projectInfo)
             }
         }
     }

@@ -28,7 +28,7 @@ import org.kohsuke.github.GitHub
 @Slf4j
 class GitHubUtil {
 
-    static GHRepository connectToGithub(Grgit localGit, String remote = 'origin') {
+    static GHRepository connectToGithub(Grgit localGit, String remote = 'origin') throws GradleException {
         String ghProject
 
         String ghConnection = localGit.remote.list().find { it.name == remote }?.url

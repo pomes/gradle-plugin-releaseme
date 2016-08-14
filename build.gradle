@@ -46,21 +46,21 @@ project(':projectinfo') {
     description = 'Grabs project information from GitHub'
     dependencies {
         compile project(':gitbase')
-        compile project(':tagger')
-    }
-}
-
-project(':releaseme') {
-    description = 'An extremely opinionated plugin to help with releases'
-    dependencies {
-        compile project(':util')
     }
 }
 
 project(':tagger') {
     description = 'Tags off a git repo, ready for release'
     dependencies {
-        compile project(':util')
+        compile project(':gitbase')
+    }
+}
+
+project(':releaseme') {
+    description = 'An extremely opinionated plugin to help with releases'
+    dependencies {
+        compile project(':tagger')
+        compile project(':projectinfo')
     }
 }
 

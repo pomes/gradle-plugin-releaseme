@@ -15,10 +15,10 @@
  */
 package com.github.pomes.gradle.releaseme
 
-import com.github.pomes.gradle.util.GitUtil
-import com.github.pomes.gradle.util.Snapshot
+import com.github.pomes.gradle.projectinfo.ProjectInfoPlugin
+import com.github.pomes.gradle.tagger.TaggerPlugin
 import groovy.util.logging.Slf4j
-import org.ajoberstar.grgit.Grgit
+import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 
@@ -35,10 +35,18 @@ class IShallBeReleasedPlugin implements Plugin<Project> {
     void apply(Project project) {
         extension = project.extensions.create(EXTENSION_NAME, IShallBeReleasedExtension)
 
+        applyPlugins(project, [TaggerPlugin,
+                               ProjectInfoPlugin] as Set)
         addPerformGitHubReleaseTask(project, extension)
     }
 
-
+    static void applyPlugins(Project project, Set<Class<Plugin>> plugins) throws GradleException {
+        plugins.each { plugin ->
+            if (!project.plugins.hasPlugin(plugin)) {
+                project.plugins.apply(plugin)
+            }
+        }
+    }
 
     private void addPerformGitHubReleaseTask(Project project, IShallBeReleasedExtension extension) {
         project.tasks.create(PERFORM_GITHUB_RELEASE) {
