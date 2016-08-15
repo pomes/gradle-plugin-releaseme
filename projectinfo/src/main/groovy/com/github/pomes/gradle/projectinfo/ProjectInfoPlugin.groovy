@@ -39,10 +39,7 @@ class ProjectInfoPlugin implements Plugin<Project> {
     static final String TASK_GROUP = 'project info'
 
     //Tasks
-    static final String DETERMINE_VERSION_TASK_NAME = 'determineCurrentVersion'
     static final String DISPLAY_VERSION_TASK_NAME = 'displayCurrentVersion'
-    //static final String CONFIGURE_VERSION_FILE_TASK_NAME = 'configureVersionFile'
-    static final String GENERATE_PROJECT_INFO_TASK_NAME = 'generateProjectInfo'
     static final String DISPLAY_PROJECT_INFO_TASK_NAME = 'displayProjectInfo'
     static final String CONFIGURE_POM_TASK_NAME = 'configurePom'
 
