@@ -25,9 +25,11 @@ import static com.github.pomes.gradle.releaseme.IShallBeReleasedPlugin.DEFAULT_R
 @Slf4j
 @ToString(includeNames = true)
 class IShallBeReleasedExtension {
-    //Boolean releaseProject = false
+    Boolean releaseProject = false
 
-    //Boolean githubRelease = false
+    Boolean githubRelease = false
 
-    //Boolean bintrayRelease = false
+    Boolean bintrayRelease = false
+
+    Boolean artifactoryRelease = false
 }

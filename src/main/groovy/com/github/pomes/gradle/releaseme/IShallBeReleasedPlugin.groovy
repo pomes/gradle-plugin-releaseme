@@ -16,7 +16,6 @@
 package com.github.pomes.gradle.releaseme
 
 import com.github.pomes.gradle.projectinfo.ProjectInfoPlugin
-import com.github.pomes.gradle.tagger.TaggerPlugin
 import com.jfrog.bintray.gradle.BintrayPlugin
 import groovy.util.logging.Slf4j
 import org.gradle.api.Plugin
@@ -37,22 +36,24 @@ class IShallBeReleasedPlugin implements Plugin<Project> {
     void apply(Project project) {
         extension = project.extensions.create(EXTENSION_NAME, IShallBeReleasedExtension)
 
-        [TaggerPlugin, ProjectInfoPlugin].each { plugin ->
-            applyPlugin(project, plugin)
-        }
-
-        project.subprojects.each { Project subProject ->
-            [MavenPublishPlugin, BintrayPlugin, ArtifactoryPlugin].each { plugin ->
-                applyPlugin(subProject, plugin)
-            }
-        }
-
-        //addPerformGitHubReleaseTask(project, extension)
-    }
-
-    static void applyPlugin(Project project, Class<Plugin> plugin) {
-        if (!project.plugins.hasPlugin(plugin)) {
+        [ProjectInfoPlugin].each { plugin ->
             project.plugins.apply(plugin)
+        }
+
+        if (extension.releaseProject) {
+            project.plugins.apply(MavenPublishPlugin)
+
+            if (extension.artifactoryRelease) {
+                project.plugins.apply(ArtifactoryPlugin)
+            }
+
+            if (extension.bintrayRelease) {
+                project.plugins.apply(BintrayPlugin)
+            }
+
+            if (extension.githubRelease) {
+                addPerformGitHubReleaseTask(project, extension)
+            }
         }
     }
 
@@ -61,16 +62,8 @@ class IShallBeReleasedPlugin implements Plugin<Project> {
             group = 'release'
             description = 'Releases the application distribution to GitHub'
             doLast {
-                project.allprojects.each { proj ->
-                    if (proj.pluginManager.hasPlugin('application')) {
-                        println proj.name
-                    }
-                }
-
-                //performGithubRelease(ghRepo)
+                println "Some day I'll release $project.name to GitHub"
             }
         }
     }
-
-
 }

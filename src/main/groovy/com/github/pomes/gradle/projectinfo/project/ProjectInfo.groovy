@@ -65,7 +65,7 @@ class Scm {
 
     void toYaml(Writer writer = new StringWriter(), prefix = ' ' * 4) {
         writer << "${prefix}system: $system\n"
-        writer << "${prefix}url: $url}\n"
+        writer << "${prefix}url: $url\n"
         writer << "${prefix}connection: $connection\n"
         writer << "${prefix}developerConnection: $developerConnection\n"
     }
