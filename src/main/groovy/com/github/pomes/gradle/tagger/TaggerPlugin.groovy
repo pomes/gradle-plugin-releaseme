@@ -10,13 +10,15 @@ import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
+import org.gradle.api.plugins.JavaBasePlugin
 import org.kohsuke.github.GHRepository
 
 @Slf4j
 class TaggerPlugin implements Plugin<Project> {
     static final String PLUGIN_NAME = 'tagger'
-    static final String CHECK_RELEASE_STATUS_TASK_NAME = 'checkReleaseStatus'
-    static final String PERFORM_RELEASE_TASK_NAME = 'performRelease'
+    static final String PLUGIN_GROUP = PLUGIN_NAME
+    static final String CHECK_RELEASE_STATUS_TASK_NAME = 'checkTagReadiness'
+    static final String PERFORM_RELEASE_TASK_NAME = 'tagRepository'
 
     Grgit localGit
     GHRepository ghRepo
@@ -29,8 +31,8 @@ class TaggerPlugin implements Plugin<Project> {
         GitBaseExtension extension = project.extensions.getByName(GitBasePlugin.EXTENSION_NAME)
 
         Task checkRelease = project.tasks.create(CHECK_RELEASE_STATUS_TASK_NAME) {
-            group = 'release'
-            description = 'Checks if there are any items preventing a release.'
+            group = PLUGIN_GROUP
+            description = 'Checks if there are any items preventing tagging the repository.'
 
             doLast {
                 Status status = localGit.status()
@@ -65,22 +67,22 @@ class TaggerPlugin implements Plugin<Project> {
 
         project.afterEvaluate {
             project.allprojects.each { p ->
-                if (p.plugins.hasPlugin('java')) {
-                    checkRelease.dependsOn p.tasks.getByName('build')
+                if (p.plugins.hasPlugin(JavaBasePlugin)) {
+                    checkRelease.dependsOn p.tasks.getByName(JavaBasePlugin.BUILD_TASK_NAME)
                 }
             }
         }
 
         project.tasks.create(PERFORM_RELEASE_TASK_NAME) {
-            group = 'release'
-            description = 'Tags the release.'
+            group = PLUGIN_GROUP
+            description = 'Tags the git repository.'
             String tag
             doFirst {
                 tag = "${extension.releaseTagPrefix}${project.version}"
                 localGit.commit(message: "Version ${project.version} release", all: true)
             }
             doLast {
-                println "Releasing $tag"
+                println "Tagging with: $tag"
                 localGit.tag.add(name: tag)
             }
         }
