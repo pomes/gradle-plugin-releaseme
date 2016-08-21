@@ -24,7 +24,7 @@ repositories {
 
 wrapper.gradleVersion = '2.14.1'
 group = 'com.github.pomes.gradle-plugins'
-version = '0.0.1'
+version = '0.0.2'
 
 dependencies {
     compile 'org.codehaus.groovy:groovy-all:2.4.4'
@@ -56,6 +56,12 @@ pluginBundle {
             displayName = 'Tagger'
             description = 'Tags off a codebase'
             tags = ['git']
+        }
+        releaseme {
+            id = 'com.github.pomes.releaseme'
+            displayName = 'Release Me!'
+            description = 'Releases to GitHub and Bintray'
+            tags = ['git', 'github', 'bintray']
         }
     }
 }
