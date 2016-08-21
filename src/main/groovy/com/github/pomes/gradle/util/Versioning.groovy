@@ -44,4 +44,8 @@ class Versioning {
         }
         return version
     }
+
+    static String formatTagName(String version) {
+        "$DEFAULT_RELEASE_TAG_PREFIX$version"
+    }
 }

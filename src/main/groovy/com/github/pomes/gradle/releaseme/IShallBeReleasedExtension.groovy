@@ -18,12 +18,9 @@ package com.github.pomes.gradle.releaseme
 
 import groovy.transform.ToString
 import groovy.util.logging.Slf4j
-import org.kohsuke.github.GitHub
-
-import static com.github.pomes.gradle.releaseme.IShallBeReleasedPlugin.DEFAULT_RELEASE_TAG_PREFIX
 
 @Slf4j
-@ToString(includeNames = true)
+@ToString(includeNames = true, excludes = ['bintrayPassword'])
 class IShallBeReleasedExtension {
     Boolean releaseProject = false
 
@@ -32,4 +29,18 @@ class IShallBeReleasedExtension {
     Boolean bintrayRelease = false
 
     Boolean artifactoryRelease = false
+
+    String bintrayUser = ''
+
+    String bintrayPassword = ''
+
+    String bintrayUserOrg = ''
+
+    String bintrayRepo = ''
+
+    String projectKeywords = []
+
+    String artifactoryRepoKey = 'oss-snapshot-local'
+
+    String artifactoryContextUrl = 'https://oss.jfrog.org/artifactory/'
 }

@@ -24,7 +24,7 @@ repositories {
 
 wrapper.gradleVersion = '2.14.1'
 group = 'com.github.pomes.gradle-plugins'
-version = '0.0.4'
+version = '0.0.5'
 
 dependencies {
     compile 'org.codehaus.groovy:groovy-all:2.4.4'

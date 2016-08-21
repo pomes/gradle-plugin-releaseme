@@ -70,7 +70,7 @@ class ProjectInfoPlugin implements Plugin<Project> {
 
     private void addDisplayVersionTask(Project project) {
         project.tasks.create(DISPLAY_VERSION_TASK_NAME) {
-            group = 'release'
+            group = TASK_GROUP
             description = 'Displays the current version.'
             doLast {
                 println project.version
