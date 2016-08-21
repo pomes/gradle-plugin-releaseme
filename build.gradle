@@ -35,7 +35,6 @@ dependencies {
     compile 'commons-validator:commons-validator:1.5.1'
 }
 
-
 pluginBundle {
     website = 'https://github.com/pomes/gradle-plugins'
     vcsUrl = 'https://github.com/pomes/gradle-plugins'
