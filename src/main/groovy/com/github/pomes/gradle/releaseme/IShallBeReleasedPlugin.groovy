@@ -38,7 +38,7 @@ class IShallBeReleasedPlugin implements Plugin<Project> {
     @Override
     void apply(Project project) {
         extension = project.extensions.create(EXTENSION_NAME, IShallBeReleasedExtension)
-        log.info "Releaseme config: extension"
+        log.info "Releaseme config: $extension"
         [ProjectInfoPlugin].each { plugin ->
             project.plugins.apply(plugin)
         }
