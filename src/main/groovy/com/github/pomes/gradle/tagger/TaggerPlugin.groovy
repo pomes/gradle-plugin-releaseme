@@ -15,7 +15,6 @@ import org.kohsuke.github.GHRepository
 @Slf4j
 class TaggerPlugin implements Plugin<Project> {
     static final String PLUGIN_NAME = 'tagger'
-    static final String EXTENSION_NAME = 'tagger'
     static final String CHECK_RELEASE_STATUS_TASK_NAME = 'checkReleaseStatus'
     static final String PERFORM_RELEASE_TASK_NAME = 'performRelease'
 
@@ -45,7 +44,7 @@ class TaggerPlugin implements Plugin<Project> {
 
                 if (!status.clean) {
                     log.warn "The local git repository contains changes: Conflicts: ${status.conflicts.size()}; Staged: ${status.staged.allChanges.size()}; Unstaged: ${status.unstaged.allChanges.size()}"
-                    //flag = true
+                    flag = true
                 }
 
                 if (localGit.branch.current.name != ghRepo.defaultBranch) {
@@ -69,7 +68,6 @@ class TaggerPlugin implements Plugin<Project> {
             }
         }
 
-        log.warn project.name
         project.afterEvaluate {
             project.allprojects.each { p ->
                 if (p.plugins.hasPlugin('java')) {
@@ -80,7 +78,6 @@ class TaggerPlugin implements Plugin<Project> {
     }
 
     private void addPerformReleaseTask(Project project, GitBaseExtension extension) {
-
         project.tasks.create('_prepareReleaseVersion') {
             group = 'release'
             description = 'Prepares any changes required prior to committing/tagging a release'

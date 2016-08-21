@@ -12,107 +12,51 @@ buildscript {
 plugins {
     id 'idea'
     id 'eclipse'
+    id 'groovy'
+    id 'java-gradle-plugin'
+}
+
+apply plugin: "com.gradle.plugin-publish"
+
+repositories {
+    jcenter()
 }
 
 wrapper.gradleVersion = '2.14.1'
 group = 'com.github.pomes.gradle-plugins'
 version = '0.0.1'
 
-subprojects {
-    repositories {
-        jcenter()
-    }
-    apply plugin: 'groovy'
-    apply plugin: 'java-gradle-plugin'
-    apply plugin: 'com.gradle.plugin-publish'
-
-    version = rootProject.version
-    group = rootProject.group
-
-    dependencies {
-        compile 'org.codehaus.groovy:groovy-all:2.4.4'
-    }
+dependencies {
+    compile 'org.codehaus.groovy:groovy-all:2.4.4'
+    compile 'org.jfrog.buildinfo:build-info-extractor-gradle:4.0.0'
+    compile 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.1'
+    compile 'org.ajoberstar:grgit:1.7.0'
+    compile 'org.kohsuke:github-api:1.77'
+    compile 'commons-validator:commons-validator:1.5.1'
 }
 
-project(':gitbase') {
-    dependencies {
-        compile project(':util')
-    }
-    pluginBundle {
-        website = 'https://github.com/pomes/gradle-plugins'
-        vcsUrl = 'https://github.com/pomes/gradle-plugins'
-        plugins {
-            gitbase {
-                id = 'com.github.pomes.gitbase'
-                displayName = 'Git Base'
-                description = 'Small plugin that connects to the local git repo and GitHub API for the repo'
-                tags = ['git', 'github']
-            }
+
+pluginBundle {
+    website = 'https://github.com/pomes/gradle-plugins'
+    vcsUrl = 'https://github.com/pomes/gradle-plugins'
+    plugins {
+        gitbase {
+            id = 'com.github.pomes.gitbase'
+            displayName = 'Git Base'
+            description = 'Small plugin that connects to the local git repo and GitHub API for the repo'
+            tags = ['git', 'github']
         }
-    }
-}
-
-project(':projectinfo') {
-    dependencies {
-        compile project(':gitbase')
-    }
-    pluginBundle {
-        website = 'https://github.com/pomes/gradle-plugins'
-        vcsUrl = 'https://github.com/pomes/gradle-plugins'
-        plugins {
-            projectInfo {
-                id = 'com.github.pomes.projectinfo'
-                displayName = 'Project Info'
-                description = 'Prepares various project info garnered from the Github repo for the project'
-                tags = ['github', 'pom']
-            }
+        projectInfo {
+            id = 'com.github.pomes.projectinfo'
+            displayName = 'Project Info'
+            description = 'Prepares various project info garnered from the Github repo for the project'
+            tags = ['github', 'pom']
         }
-    }
-}
-
-project(':tagger') {
-    dependencies {
-        compile project(':gitbase')
-    }
-    pluginBundle {
-        website = 'https://github.com/pomes/gradle-plugins'
-        vcsUrl = 'https://github.com/pomes/gradle-plugins'
-        plugins {
-            tagger {
-                id = 'com.github.pomes.tagger'
-                displayName = 'Tagger'
-                description = 'Tags off a codebase'
-                tags = ['git']
-            }
+        tagger {
+            id = 'com.github.pomes.tagger'
+            displayName = 'Tagger'
+            description = 'Tags off a codebase'
+            tags = ['git']
         }
-    }
-}
-
-project(':releaseme') {
-    dependencies {
-        compile project(':tagger')
-        compile project(':projectinfo')
-        compile 'org.jfrog.buildinfo:build-info-extractor-gradle:4.0.0'
-        compile 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.1'
-    }
-    pluginBundle {
-        website = 'https://github.com/pomes/gradle-plugins'
-        vcsUrl = 'https://github.com/pomes/gradle-plugins'
-        plugins {
-            releaseme {
-                id = 'com.github.pomes.releaseme'
-                displayName = 'Release me!'
-                description = 'An extremely opinionated plugin to help with releases'
-                tags = ['github', 'pom', 'bintray', 'artifactory']
-            }
-        }
-    }
-}
-
-project(':util') {
-    dependencies {
-        compile 'org.ajoberstar:grgit:1.7.0'
-        compile 'org.kohsuke:github-api:1.77'
-        compile 'commons-validator:commons-validator:1.5.1'
     }
 }
